@@ -1,9 +1,9 @@
 # PianoTranscriber
 
-A small model that splits a music score pdf by bar and outputs LMX, by Olimpic, which is then converted to MusicXML for general use.
+A small model that splits a music score pdf by bar and outputs LMX, by [Olimpic](https://github.com/ufal/olimpic-icdar24), which is then converted to MusicXML for general use.
 
 It is designed to be lightweight while having comparable accuracy with other open-sourced models, but omits details such as dynamics and tempo. 
-It is suitable for use when the full resolution is not necessary, for example in music tracking via chroma and online time warping methods, (e.g. PageTurner by me, in Tracker-for-the-solo-piano) and the bar recognition can be used in some app features as well, for example bar highlighting.
+It is suitable for use when the full resolution is not necessary, for example in music tracking via chroma and online time warping methods, (e.g. [PageTurner](https://github.com/YangJunren11/Tracker-for-the-solo-piano) by me, in Tracker-for-the-solo-piano) and the bar recognition can be used in some app features as well, for example bar highlighting.
 
 ## Install
 
