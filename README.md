@@ -51,4 +51,6 @@ Recognizer and its output LMX:
 
 <img width="547" height="331" alt="image" src="https://github.com/user-attachments/assets/8e670a57-7998-41cf-a8bd-3cf6d6d57fda" />
 
+## License
 
+CC BY-NC-SA 4.0 (non-commercial, share alike): see [LICENSE](LICENSE). The code, the models and their weights are for non-commercial use only; the bar counter weights carry the same licence (`models/LICENSE.md`).
