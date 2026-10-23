@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.DS_Store
+
+# What the pipeline writes
+*.musicxml
+*.mxl
+*.lmx
+score.json

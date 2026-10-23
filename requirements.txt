@@ -1,0 +1,8 @@
+# Versions the pipeline was run with; newer ones should do.
+# For a CPU-only install, first: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch>=2.11
+torchvision>=0.26
+numpy>=2.2
+scipy>=1.15
+pillow>=12.3
+pypdfium2>=5.14
