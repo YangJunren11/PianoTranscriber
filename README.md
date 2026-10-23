@@ -44,9 +44,11 @@ pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.jso
 All scores below are in the public domain.
 
 Bar splitting before going into the recognizer:
+
 <img width="698" height="284" alt="image" src="https://github.com/user-attachments/assets/b29b6eba-257e-4368-9995-64148311a86f" />
 
 Recognizer and its output LMX:
+
 <img width="547" height="331" alt="image" src="https://github.com/user-attachments/assets/8e670a57-7998-41cf-a8bd-3cf6d6d57fda" />
 
 
