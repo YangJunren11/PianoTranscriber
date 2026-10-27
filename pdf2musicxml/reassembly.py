@@ -65,16 +65,69 @@ def _group_is_whole(group: list[ET.Element]) -> bool:
     return len(ratios) == 1 and len(shapes) == 1 and len(primary) == int(next(iter(ratios))[0])
 
 
-def repair(score: ET.ElementTree) -> dict:
-    """Make the MusicXML importable (MuseScore refuses it otherwise); counts of what was changed.
+# The accidentals partitura (PageTurner's loader) can name; it asks for the accidental of a pitch that has no <alter>.
+# MusicXML's own names for a double flat and sharp are flat-flat and sharp-sharp (double-flat is not a member of its
+# accidental-value), so these are not renamed: a note with another one and no <alter> is given the <alter> that no
+# <alter> means instead (`_pin_alter`).
+PARTITURA_ACCIDENTALS = {"sharp", "natural", "flat", "double-sharp", "double-flat"}
 
-    Every measure gets a number, from 1 in each part. In each measure the notes are walked in order: a
-    tuplet group runs from a note that starts a tuplet to the note that stops it. A closed group is kept
-    only if uniform and complete; an unclosed one, a note stopping and starting at once, and a note with a
-    time modification outside any bracket are made plain.
+
+def _fix_chords(measure: ET.Element, counts: dict) -> None:
+    """A chord note sounds with the note before it, so it must follow a pitched note (partitura fails on a rest there,
+    and with nothing before it MuseScore and music21 each guess). In each voice's run of notes (a backup or forward
+    ends it):
+
+    * a chord note right after a rest takes the rest's place: the rest is removed and the note, the first of the chord,
+      loses its <chord/> (the notes chorded to it after that follow it as before); the rest and the note are
+      normally of one length, and when they are not the voice is as long as the note makes it;
+    * a chord note with nothing before it, or a rest marked as a chord note, loses its <chord/>.
+    """
+    prev: ET.Element | None = None
+    for el in list(measure):
+        if el.tag in ("backup", "forward"):
+            prev = None
+            continue
+        if el.tag != "note":
+            continue
+        chord = el.find("chord")
+        if chord is not None:
+            if prev is not None and prev.find("rest") is not None and el.find("rest") is None:
+                el.remove(chord)
+                measure.remove(prev)
+                counts["chord_after_rest_made_first"] += 1
+            elif prev is None or el.find("rest") is not None:
+                el.remove(chord)
+                counts["chord_flags_dropped"] += 1
+        prev = el
+
+
+def _pin_alter(note: ET.Element, counts: dict) -> None:
+    """A pitch with no <alter> has none (it is natural), which is how the writer leaves a note whose accidental is
+    cancelled by a tie or a later natural. partitura reads the accidental then, and only knows `PARTITURA_ACCIDENTALS`:
+    a note with another one (flat-flat, sharp-sharp, ...) and no <alter> is given <alter>0</alter>, the same pitch."""
+    pitch, accidental = note.find("pitch"), note.find("accidental")
+    if pitch is None or accidental is None or pitch.find("alter") is not None:
+        return
+    if accidental.text not in PARTITURA_ACCIDENTALS:
+        alter = ET.Element("alter")
+        alter.text = "0"
+        pitch.insert(1 if pitch.find("step") is not None else 0, alter)
+        counts["alters_added"] += 1
+
+
+def repair(score: ET.ElementTree) -> dict:
+    """Make the MusicXML importable (MuseScore refuses it otherwise; partitura and music21 load it); counts of what
+    was changed.
+
+    Every measure gets a number, from 1 in each part. A chord note that does not follow a pitched note is
+    repaired (`_fix_chords`) and a note whose accidental partitura cannot name is given its <alter>
+    (`_pin_alter`). Then, in each measure the notes are walked in order: a tuplet group runs from a note that
+    starts a tuplet to the note that stops it. A closed group is kept only if uniform and complete; an unclosed
+    one, a note stopping and starting at once, and a note with a time modification outside any bracket are made plain.
     """
     counts = {"measures_numbered": 0, "tuplet_groups": 0, "tuplet_groups_made_plain": 0,
-              "stray_notes_made_plain": 0, "incomplete_tuplet_groups": 0}
+              "stray_notes_made_plain": 0, "incomplete_tuplet_groups": 0,
+              "chord_after_rest_made_first": 0, "chord_flags_dropped": 0, "alters_added": 0}
 
     def close(group: list[ET.Element]) -> None:
         counts["tuplet_groups"] += 1
@@ -88,6 +141,9 @@ def repair(score: ET.ElementTree) -> dict:
             if measure.get("number") != str(k):
                 measure.set("number", str(k))
                 counts["measures_numbered"] += 1
+            _fix_chords(measure, counts)
+            for note in measure.findall("note"):
+                _pin_alter(note, counts)
             group: list[ET.Element] | None = None
             for note in measure.findall("note"):
                 starts, stops = _tuplet_marks(note)
@@ -160,5 +216,10 @@ def write(bars: list[list[str]], path: Path | str, start: State | None = None, r
         counts = _repair(score)
         if counts["incomplete_tuplet_groups"]:
             errors += f"{counts['incomplete_tuplet_groups']} incomplete tuplet groups made plain\n"
+        if counts["chord_after_rest_made_first"] or counts["chord_flags_dropped"]:
+            errors += (f"{counts['chord_after_rest_made_first']} chord notes after a rest took the rest's place, "
+                       f"{counts['chord_flags_dropped']} chord flags dropped\n")
+        if counts["alters_added"]:
+            errors += f"{counts['alters_added']} notes given an explicit <alter>0</alter>\n"
     score.write(str(path), encoding="utf-8", xml_declaration=True)
     return errors

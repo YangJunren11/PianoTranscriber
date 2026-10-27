@@ -72,24 +72,27 @@ class Transcriber:
                        "first_model": str(first_model) if first_model else None,
                        "starts_model": str(starts_model) if starts_model else None}
 
-    def transcribe(self, pdf, out, pages=None, json_path=None, lmx_path=None, batch=True) -> Path:
+    def transcribe(self, pdf, out, pages=None, json_path=None, lmx_path=None, batch=True,
+                   resolve_time=True) -> Path:
         """`pdf` read into MusicXML at `out`, which is returned. `pages` (1-based, a list or '1-3,7') limits
-        the pages read; `json_path` gets a JSON of data about every bar read, `lmx_path` the LMX a bar a line."""
+        the pages read; `json_path` gets a JSON of data about every bar read, `lmx_path` the LMX a bar a line.
+        With `resolve_time` (the default), a time signature that the bars do not fill is replaced by the one
+        that makes them fill (bars read again, `read.TimeResolver`); False carries the time as it was read."""
         from .transcribe import run
 
         started = time.time()
         run(pdf, out, self.counter, self.reader, self.opener, self.starts, pages_of(pages), json_path, lmx_path,
-            self.models, started, batch)
+            self.models, started, batch, resolve_time)
         return Path(out)
 
 
 def pdf_to_musicxml(pdf, out, *, pages=None, json_path=None, lmx_path=None,
                     recognizer=DEFAULT_RECOGNIZER, starts_model=DEFAULT_STARTS_MODEL,
                     first_model=None, bar_counter=DEFAULT_BAR_COUNTER,
-                    device=None, threads=None, batch=True) -> Path:
+                    device=None, threads=None, batch=True, resolve_time=True) -> Path:
     """One PDF of piano music read into MusicXML at `out`, which is returned. `pages` (1-based, a list or
     '1-3,7') limits the pages read, `json_path` and `lmx_path` ask for the JSON of data about every bar and
     the LMX. The models are loaded for this one call: to read many PDFs, make a `Transcriber` and call its
-    `transcribe`."""
+    `transcribe`. `resolve_time=False` carries the time signature as it was read (see `Transcriber.transcribe`)."""
     return Transcriber(recognizer, starts_model, bar_counter, device, threads, first_model).transcribe(
-        pdf, out, pages, json_path, lmx_path, batch)
+        pdf, out, pages, json_path, lmx_path, batch, resolve_time)

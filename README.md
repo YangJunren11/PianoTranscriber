@@ -31,6 +31,7 @@ python -m pdf2musicxml.transcribe score.pdf --out score.musicxml --json score.js
 
 `--out` is the MusicXML to write; `--json` (optional) writes data about every bar read. To read only some
 pages, add `--pages 1-3,7` (1-based; the default is all of them).
+The models were trained on 26 October 2026, and the time signature is checked against how the bars fill it and corrected if they do not; `--no-resolve-time` turns this check off.
 
 From Python, from the repository root:
 
@@ -39,6 +40,16 @@ from pdf2musicxml import pdf_to_musicxml
 
 pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.json")
 ```
+
+## Results
+
+Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist):
+
+| Test set | Bars | Note F1 |
+|---|---:|---:|
+| OLiMPiC scanned test set | 4,490 | 81.2% |
+| Real scans of printed editions, Baroque to 20th century (our held-out set) | 4,951 | 81.8% |
+| Engraved scores (held-out) | 4,065 | 95.0% |
 
 ## Examples
 All scores below are in the public domain.
