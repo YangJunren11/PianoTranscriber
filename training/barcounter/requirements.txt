@@ -1,0 +1,8 @@
+# Training and export only; nothing here is needed to count bars with the Swift package.
+# The versions the published model was trained and exported with.
+torch>=2.14
+numpy>=2.5
+pillow>=12.3
+scipy>=1.18
+opencv-python-headless>=5.0
+coremltools>=9.0

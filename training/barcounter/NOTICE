@@ -1,0 +1,19 @@
+Grand Staff Bar Counter for PDFs
+Copyright 2026 the Grand Staff Bar Counter for PDFs contributors
+
+The code is licensed under the Apache License, Version 2.0 (LICENSE). The trained network in model/
+is not: it is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+(model/LICENSE.md), because some of the data it was trained on is licensed that way.
+
+It was trained on:
+
+- Scores from PDMX (Long, Novack, McAuley and Berg-Kirkpatrick, 2024), whose uploaders placed them
+  in the public domain (CC0 or the Public Domain Mark); the collection is CC BY 4.0.
+- Scores from ASAP (Foscarin, McLeod, Rigaux, Jacquemard and Sakai, 2020), CC BY-NC-SA 4.0.
+- The AudioLabs v2 measure annotations (Kletz, Zalkow, Villar Corrales, Tsai, Arifi-Müller and
+  Müller, 2020), CC BY-NC-SA 4.0: 860 pages scanned from public-domain editions on IMSLP, and 80
+  provided by kind permission of Carus-Verlag.
+
+The scores were engraved for training by MuseScore 4 (https://musescore.org) in its Leland, Bravura,
+Emmentaler, Gonville and Maestro fonts. None of MuseScore, its fonts or any of the data above is
+included here.

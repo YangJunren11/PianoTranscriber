@@ -10,11 +10,16 @@
 
 A crop keeps the pipeline's scale, a staff space 9 pixels, so every bar is read at the size it is
 printed; one bigger than MAX_HEIGHT by MAX_WIDTH is shrunk to fit. Needs PyTorch and torchvision.
+
+A design with a network of its own (experiments/PLAN.md, "The model contract") is a `model.py` whose path a
+checkpoint keeps under "module"; `Reader` builds from it (`load_module`, `preparer`) and makes the crops as it says.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -29,6 +34,7 @@ MAX_HEIGHT, MAX_WIDTH = 384, 1536  # pixels: a crop bigger than this is shrunk t
 MAX_TOKENS = 768  # the state and the bar's tokens together
 CHECK = 8  # cached reading looks whether every bar is done this often (steps)
 STRIDE = 8  # the encoder's features, in pixels of the crop
+ROOT = Path(__file__).resolve().parents[1]  # the repository: a checkpoint's "module" is a path from here
 
 
 class Vocabulary:
@@ -62,16 +68,18 @@ class Vocabulary:
         return [STATE, *self.encode(state.tokens()), BOS]
 
 
-def prepare(image: np.ndarray, mask: np.ndarray | list[int]) -> torch.Tensor:
+def prepare(image: np.ndarray, mask: np.ndarray | list[int], max_height: int = MAX_HEIGHT,
+            max_width: int = MAX_WIDTH) -> torch.Tensor:
     """A crop (grey, 0 black and 255 white) and its mask (an array, 1 over the bar, or the bar's
-    rectangle: left, top, right, bottom) as the encoder takes them: two channels, ink and mask."""
+    rectangle: left, top, right, bottom) as the encoder takes them: two channels, ink and mask. One bigger
+    than max_height by max_width is shrunk to fit (a design that scales the crops raises the limits)."""
     h, w = image.shape
     if not isinstance(mask, np.ndarray):
         left, top, right, bottom = mask
         mask = np.zeros((h, w), np.float32)
         mask[top:bottom, left:right] = 1
     x = torch.from_numpy(np.stack([1 - image.astype(np.float32) / 255, mask.astype(np.float32)]))
-    scale = min(1.0, MAX_HEIGHT / h, MAX_WIDTH / w)
+    scale = min(1.0, max_height / h, max_width / w)
     if scale < 1:
         size = (max(1, round(h * scale)), max(1, round(w * scale)))
         x = nn.functional.interpolate(x[None], size=size, mode="area")[0]
@@ -297,13 +305,53 @@ class BarRecognizer(nn.Module):
         return [tokens[k, start[k]:lengths[k]].tolist() for k in range(b)]
 
 
+def load_module(path: Path | str):
+    """A design's `model.py` (a path from the repository root, or absolute) imported by its path, once:
+    it has CONFIG, build(vocabulary, **config) and optionally prepare(image, mask) and make_prepare(**config)."""
+    file = Path(path)
+    file = file if file.is_absolute() else ROOT / file
+    name = "recognizer_design_" + "".join(c if c.isalnum() else "_" for c in file.resolve().as_posix())
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, file)
+    if spec is None or spec.loader is None:
+        raise FileNotFoundError(f"no model module at {file}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(name, None)
+        raise
+    return module
+
+
+def preparer(module, config: dict | None = None):
+    """How a design makes a crop ready: its `make_prepare(**config)` if it has one (the crops depend on the
+    config, e.g. a scale), else its `prepare(image, mask)`, else the baseline's `prepare`."""
+    make = getattr(module, "make_prepare", None)
+    if make is not None:
+        return make(**(config or {}))
+    return getattr(module, "prepare", prepare)
+
+
 class Reader:
-    """A trained bar recognizer, reading bars."""
+    """A trained bar recognizer, reading bars. A checkpoint with a "module" (a design with a network of its
+    own, see `load_module`) is built from that module and reads crops as it prepares them."""
+
+    prepare = staticmethod(prepare)  # a design's own preparation replaces this on the instance
 
     def __init__(self, checkpoint: Path | str, device: str | None = None):
         saved = torch.load(checkpoint, map_location="cpu")
         self.vocabulary = Vocabulary(saved["vocabulary"])
-        self.model = BarRecognizer(len(self.vocabulary), **saved["config"])
+        self.module = saved.get("module")
+        if self.module:
+            design = load_module(self.module)
+            # "pretrained" asks for ImageNet's weights when the network is made: the checkpoint's weights replace them
+            self.model = design.build(len(self.vocabulary), **{**saved["config"], "pretrained": False})
+            self.prepare = preparer(design, saved["config"])
+        else:
+            self.model = BarRecognizer(len(self.vocabulary), **saved["config"])
         self.model.load_state_dict(saved["model"])
         self.variant = saved.get("variant", {})  # how it was trained, where that changes how it reads: "system_reset"
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
@@ -312,7 +360,7 @@ class Reader:
     def read(self, crops: list[tuple[np.ndarray, np.ndarray | list[int]]], states: list[State]) -> list[list[str]]:
         """Bars each read from the state given for it: bars of different scores, or with their true
         states, read side by side."""
-        images, padding = batch([prepare(image, mask) for image, mask in crops])
+        images, padding = batch([self.prepare(image, mask) for image, mask in crops])
         ids = self.model.read(images.to(self.device), padding.to(self.device),
                               [self.vocabulary.prefix(s) for s in states])
         return [self.vocabulary.decode(i) for i in ids]
@@ -336,7 +384,7 @@ class Reader:
         are exactly those `read` gives for one crop at a time. The decoder still reads them together."""
         memories = []
         for image, mask in crops:
-            images, padding = batch([prepare(image, mask)])
+            images, padding = batch([self.prepare(image, mask)])
             with torch.no_grad():
                 memories.append(self.model.encode(images.to(self.device), padding.to(self.device)))
         n = max(m.shape[1] for m, _ in memories)
