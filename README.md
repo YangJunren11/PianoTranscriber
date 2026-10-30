@@ -45,11 +45,11 @@ pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.jso
 
 Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist):
 
-| Test set | Bars | Note F1 |
+| Test set | Bars | Note F1 | SER | Timed F1 |
 |---|---:|---:|
-| OLiMPiC scanned test set | 4,490 | 81.2% |
-| Real scans of printed editions, Baroque to 20th century (our held-out set) | 4,951 | 81.8% |
-| Engraved scores (held-out) | 4,065 | 95.0% |
+| OLiMPiC scanned test set | 4,490 | 81.2% | 17.3% | 73.3% |
+| Real scans of printed editions, Baroque to 20th century (our held-out set) | 4,951 | 81.8% | 24.5% | 73.7% |
+| Engraved scores (held-out) | 4,065 | 95.0% | 8.1% | 93.1% |
 
 ## Examples
 All scores below are in the public domain.
