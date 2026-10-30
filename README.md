@@ -43,13 +43,15 @@ pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.jso
 
 ## Results
 
-Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist):
+Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist). SER is the symbol error rate over whole systems, as the OLiMPiC paper computes it: the bars of a system joined, one edit distance over LMX tokens per system, pooled over the set:
 
 | Test set | Bars | Note F1 | SER | Timed F1 |
 |---|---:|---:|---:|---:|
-| OLiMPiC scanned test set | 4,490 | 81.2% | 17.3% | 73.3% |
-| Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.5% | 73.7% |
+| OLiMPiC scanned test set | 4,490 | 81.2% | 17.1% | 73.3% |
+| Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.0% | 73.7% |
 | Engraved scores (our test set) | 4,065 | 95.0% | 8.1% | 93.1% |
+
+On the complete OLiMPiC scanned test set under OLiMPiC's own protocol, all 1,493 systems with every system cut into bars by our bar counter and read, and a system the cutting fails on counted as entirely wrong, the SER is 23.4%. The table's row holds the 4,490 bars whose systems were cut into exactly the right number of bars.
 
 ## Examples
 All scores below are in the public domain.
