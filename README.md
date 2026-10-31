@@ -49,7 +49,7 @@ SER is scored per system, as the OLiMPiC paper scores it: the bars of a system j
 
 | Test set | Bars | Note F1 | SER (bar cropped correctly) | Timed F1 |
 |---|---:|---:|---:|---:|
-| OLiMPiC scanned test set | 5,364 | 88.1% | 12.7% | 81.1% |
+| OLiMPiC scanned test set | 5,364 | 88.1% | 12.7% (15.7% including cropping mistakes) | 81.1% |
 | Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.0% | 73.7% |
 | Engraved scores (our test set) | 4,065 | 95.0% | 8.1% | 93.1% |
 
