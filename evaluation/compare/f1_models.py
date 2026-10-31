@@ -13,7 +13,7 @@ What is scored for a system on a piece
   gold    the manifest's "truth" file, read the same way. Nothing is excluded from it (no bar has to be writable as LMX).
   cut     the manifest's "cut" (experiment 13 scored a system that read only the first pages against the first so many
           measures) is NOT used for the headline figures: the whole piece is the denominator, so the pages a system did not
-          read are misses. It is recorded in the row as "cut_ignored", and used only for the "direct_*" continuity figures.
+          read are misses. It is recorded in the row as "cut_ignored", and used only for the "direct_*" figures.
           EXCEPT for a system named in --apply-cut: for it the TRUE measures are truncated to the first `cut` before the
           alignment and the counting (a piece with no cut is scored whole). The row records "cut_applied" (the cut, or None
           for a piece with none) and "cut_ignored" is None. Bars read beyond the cut still count as events found, and being
@@ -60,16 +60,20 @@ A measure no bar was aligned to ("missed") adds its events to events_true only, 
 measure ("unmatched") adds its events to events_found only, so it costs precision. Pooled figures over a set of pieces are
 micro (sums of tp, events_found, events_true, then the same formulas) and the mean over the pieces' own figures is given
 beside them.
-Two continuity figures, neither of them a headline:
+Two further figures, neither of them a headline:
   matched_only_*  the F1 over the aligned pairs of THIS alignment only (found and true counted over those pairs; 1.0 if
                   they hold no event, and "matched_only_empty" says so): what the score would be if missed measures and
                   unmatched bars cost nothing.
-  direct_*        score_direct.score itself, as experiment 13 ran it: the truth cut to the manifest's "cut" where there is
-                  one, score_direct's own alignment (positional when the counts are equal). The figure of the research
-                  repository's experiments/13_comparison/direct_scores.json, so this is the continuity figure with
-                  experiment 13, except where one of score_direct's fixes bites (a third part, an enharmonic spelling
-                  that changed the alignment, simultaneous notes of one pitch in two voices; see score_direct). Per
-                  piece and as a mean only: an F1 cannot be pooled from counts of a different alignment.
+  direct_*        score_direct.score, with the truth cut to the manifest's "cut" where there is one, as experiment 13
+                  cut it, and score_direct's own alignment (positional when the counts are equal). It equalled the
+                  research repository's experiments/13_comparison/direct_scores.json before the 1 November 2026 fixes to
+                  score_direct, and now differs wherever one of them changes a pair: the alignment features (exact
+                  durations in quarters instead of printed note types; accidentals counted, where letter and octave
+                  alone were; rests counted as a pitch; enharmonic spellings merged), the reading order's tie-break by
+                  duration, and the extra parts now kept (see score_direct). On the benchmark the duration and accidental
+                  changes move the most rows, merging enharmonic spellings alone moves few, and keeping extra parts moves
+                  none (no file there has more than two parts). Per piece and as a mean only: an F1 cannot be pooled from
+                  counts of a different alignment.
 matched_only_* is NOT score_direct.score's figure: it equals direct_* except (a) where experiment 13 cut the truth (the
 rows with a "cut_ignored"), and (b) where the bar count equals the measure count and the
 content alignment is not the diagonal, so that score_direct paired by position and this tool by content. Rows of kind (b)
@@ -161,9 +165,11 @@ DEFINITIONS = {
                     "where experiment 13 cut the truth (cut_ignored) and where realigned is true; see direct",
     "realigned": "True when the bar count equals the measure count and the content alignment is not the diagonal: "
                  "score_direct pairs those bars by position, this tool by content, so direct_* and matched_only_* differ",
-    "direct": "score_direct.score as experiment 13 ran it (truth cut to the manifest's cut where there is one, score_direct's "
-              "own alignment): the figure of experiments/13_comparison/direct_scores.json, except where score_direct's fixes "
-              "bite (extra parts kept, alignment by sounding pitch, reading order by duration too); per piece and mean only",
+    "direct": "score_direct.score with the truth cut where experiment 13 cut it (score_direct's own alignment, positional "
+              "when the counts are equal). It equalled experiments/13_comparison/direct_scores.json before the 1 November 2026 "
+              "fixes and now differs wherever the new alignment features (exact durations, accidentals counted, rests counted "
+              "as a pitch, enharmonic spellings merged), the reading order's tie-break by duration or the extra parts kept "
+              "change a pair; per piece and mean only",
     "pooled": "micro = sums of tp / events_found / events_true over the pieces; mean = mean of the pieces' own figures. "
               "Over the pieces a system has a manifest entry for (see not_run); pieces_in_set is the whole set",
     "cut_ignored": "the page cut experiment 13 used (a system that read only the first pages); NOT applied here",
@@ -421,9 +427,10 @@ def footnotes(rows: dict[str, dict], not_run: dict[str, list[str]], rests: bool)
                    "bar and measure counts are equal: " + "; ".join(f"{s} on {', '.join(p)}" for s, p in realigned.items())
                    + ". On these rows matched_only_* differs from direct_*.")
     out.append("matched_only_* = the same F1 over the aligned pairs only (what the score would be if missed measures and "
-               "unmatched bars cost nothing); it is not experiment 13's figure on the rows read only in part (cut) or "
-               "realigned (above). direct_* = experiments/13_comparison/direct_scores.json's figure (score_direct.score, "
-               "truth cut where experiment 13 cut it): the continuity figure.")
+               "unmatched bars cost nothing); it differs from direct_* on the rows read only in part (cut) or "
+               "realigned (above). direct_* = score_direct.score with the truth cut where experiment 13 cut it; it equalled "
+               "experiments/13_comparison/direct_scores.json's figure before the 1 November 2026 fixes and now differs "
+               "wherever the new alignment features, the new reading order or the extra parts kept change a pair.")
     return out
 
 
@@ -512,7 +519,7 @@ def run(args) -> int:
         for system, p in by_system.items():
             extra = "" if p["n_pieces"] == len(p["pieces_in_set"]) else f"  [{p['n_pieces']} of {len(p['pieces_in_set'])} pieces]"
             print(line(system, p["micro"]) + extra)
-        print(f"-- {name}: mean over pieces (direct = experiment 13's matched-only figure, truth cut where it cut)")
+        print(f"-- {name}: mean over pieces (direct = score_direct.score with the truth cut where experiment 13 cut it; not matched_only)")
         for system, p in by_system.items():
             m = p["mean"]
             print(f"{system:42} note {pct(m['note_F1'])}  pitch {pct(m['pitch_F1'])}  onset {pct(m['onset_F1'])}  "
@@ -939,7 +946,7 @@ def selftest() -> int:
         check("footnote: rests count, with the durations sentence", any(s.startswith("Rests count as events with durations in every figure") for s in notes_), True)
         check("footnote with --no-rests says pitched notes only", any(s.startswith("Rests are left out of both sides") for s in footnotes(rows, not_run, False)), True)
         check("footnote: staff convention and what F1 cannot see", any("need the right staff" in s and "blind to clefs" in s for s in notes_), True)
-        check("footnote: matched_only_* and the continuity figure direct_*", any("matched_only_*" in s and "continuity figure" in s for s in notes_), True)
+        check("footnote: matched_only_* and direct_*, with the date of the scorer fixes", any("matched_only_*" in s and "direct_*" in s and "1 November 2026" in s for s in notes_), True)
         check("footnote: measures found against measures exact", any(s.startswith("measures found = bars read against measures") for s in notes_), True)
         check("the definitions carry realigned and the rests/staff sentences", all(k in DEFINITIONS for k in ("realigned", "rests", "staff", "alignment", "matched_only", "direct")), True)
         check("JSON-able", bool(json.dumps(res, default=str)), True)

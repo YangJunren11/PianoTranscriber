@@ -26,8 +26,10 @@ Measures are aligned as transcribe.align does: one to one when the counts are eq
 cost of 0.3 over the cosine similarity of the measures' notes (`vector`: a count per sounding pitch, the MIDI number,
 rests as one more pitch, and half a count per musical duration in quarters). The features are the ones the F1s compare,
 so what is scored by sounding pitch is aligned by sounding pitch: a C sharp aligns with a D flat, and a spelling can
-change no figure (the research repository's scan_dataset.notes counted written steps and printed note types instead, so
-an enharmonic spelling could pair a bar with the wrong measure). Then per aligned pair, pooled over the piece
+change no figure (the research repository's scan_dataset.notes counted written steps, letter and octave without the
+alteration, and printed note types instead, so an enharmonic spelling could pair a bar with the wrong measure). The
+price: a reading that writes a triplet as plain eighths has other durations than the truth and is aligned by its pitches
+alone as far as those notes go; the printed types matched such a bar. Then per aligned pair, pooled over the piece
 (micro-averaged):
 
 - note F1: staff by staff, notes in reading order (onset, grace first, pitch upwards, then duration, so that two
@@ -43,10 +45,11 @@ Unaligned measures and bars are left out of the F1s, as in transcribe.accuracy.
 
 Reduced from the research repository's experiments/13_comparison/score_direct.py to the functions f1_models.py uses
 (`measures_of`, `score`); its command line and the runs over stored outputs are not carried. Three things are changed
-from that code, after a review of the scorer: extra parts are kept (they were cut to two), the alignment features are
-sounding pitches and durations (they were written steps and printed types), and the reading order breaks ties by
-duration (it depended on the voices' order in the file). Where one of these bites, `score` differs from
-experiments/13_comparison/direct_scores.json.
+from that code, after a review of the scorer: extra parts are kept (they were cut to two); the alignment features are
+sounding pitches (accidentals counted, enharmonic spellings merged, rests counted as a pitch) and exact durations in
+quarters (they were written steps, letter and octave only, and printed note types); and the reading order breaks ties
+by duration (it depended on the voices' order in the file). `score` equalled experiments/13_comparison/direct_scores.json
+before these changes, and differs from it wherever one of them changes a pair.
 """
 
 from __future__ import annotations
@@ -167,9 +170,12 @@ def features(bars: list[list[Event]]) -> dict:
 
 
 def vector(bar: list[Event], index: dict) -> np.ndarray:
-    """A bar as the alignment sees it: a count for each sounding pitch, and half a count for each musical duration. The
-    same facts the F1s compare (pitch as a MIDI number, duration in quarters), none of the spelling or the printed note
-    type, so that a C sharp and a D flat, or a triplet written with and without its bracket, align alike."""
+    """A bar as the alignment sees it: a count for each sounding pitch (a rest is one more pitch), and half a count for
+    each musical duration. The same facts the F1s compare (pitch as a MIDI number, duration in quarters), none of the
+    spelling or the printed note type, so that a C sharp and a D flat align alike. A bracket drawn or not changes no
+    duration, so it changes nothing here. A reading that writes a triplet as plain eighths (drops the tuplet) has other
+    durations than the truth and is aligned by its pitches alone as far as those notes go; the printed-type feature of the
+    research code matched such a bar. That is the trade-off of aligning by what the F1s compare."""
     v = np.zeros(len(index), np.float32)
     for e in bar:
         v[index["pitch", e[2]]] += 1

@@ -58,7 +58,8 @@ was never run on it and is listed as not run. The summary printed names the piec
 music21 for every system and for the gold alike (`score_direct.py`), with no LMX, MuseScore or normaliser in between. The whole
 piece is the denominator: the events of a measure no bar was aligned to count as misses, those of a bar aligned to no measure as
 false alarms (bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count, on the measures' sounding
-pitches and durations, the facts the F1s compare, so that a spelling cannot change a figure). Every note a system writes counts,
+pitches and durations, the facts the F1s compare, so that a spelling cannot change a figure; a reading that writes a
+triplet as plain eighths has other durations than the truth, and is aligned by its pitches alone). Every note a system writes counts,
 those on a third or later staff included (they match nothing of a two-staff gold under note, pitch and timed F1, which need the
 staff; onset F1 takes any staff), and the order of the voices in a file cannot
 change a figure. It also prints the
@@ -72,6 +73,8 @@ against other OMR systems; `selftest` checks the scorer on made-up music and fil
 
 Helper modules: `bar_dataset.py` (read MusicXML, find the piano part, linearize it), taken from the research code without changing
 what it computes, and `compare/score_direct.py` (reduced to the functions used), which differs from the research code in three
-things a review of the scorer found: extra parts are kept rather than cut to two, measures are aligned by sounding pitch and
-duration rather than by written step and printed note type, and the reading order of a staff's notes breaks ties by duration
-rather than by the voices' order in the file. `tests/test_compare_scorer.py` holds those cases.
+things a review of the scorer found: extra parts are kept rather than cut to two, measures are aligned by sounding pitch (accidentals
+counted, enharmonic spellings merged, rests counted as a pitch) and exact duration rather than by written step (letter and octave) and
+printed note type, and the reading order of a staff's notes breaks ties by duration rather than by the voices' order in the file. Its
+`score` equalled the research code's `direct_scores.json` before these changes and differs from it wherever one of them changes a pair.
+`tests/test_compare_scorer.py` holds those cases.
