@@ -54,15 +54,23 @@ SER is scored per system, as the OLiMPiC paper scores it: the bars of a system j
 | Engraved scores (our test set) | 4,065 | 95.0% | 8.1% | 93.1% |
 
 ## Examples
-All scores below are in the public domain.
+The score below is Joseph Haydn's Sonata Hob. XVI:32, page 2, and is in the public domain.
 
 Bar splitting before going into the recognizer:
 
-<img width="698" height="284" alt="image" src="https://github.com/user-attachments/assets/b29b6eba-257e-4368-9995-64148311a86f" />
+<img width="619" height="494" alt="Screenshot 2026-11-01 at 3 03 01 AM" src="https://github.com/user-attachments/assets/c6039c51-42c3-4e3f-ae23-8c6f2f02fbbb" />
+
+ResNet-18 Heatmap:
+
+<img width="649" height="459" alt="Screenshot 2026-11-01 at 3 03 46 AM" src="https://github.com/user-attachments/assets/42f7947d-a654-4b12-b3ec-24d5b6fd29b7" />
 
 Recognizer and its output LMX:
 
-<img width="547" height="331" alt="image" src="https://github.com/user-attachments/assets/8e670a57-7998-41cf-a8bd-3cf6d6d57fda" />
+<img width="647" height="362" alt="Screenshot 2026-11-01 at 3 04 11 AM" src="https://github.com/user-attachments/assets/b2490dab-ac93-41cd-bbe6-2160e3416d6e" />
+
+Output page:
+
+<img width="445" height="591" alt="Screenshot 2026-11-01 at 3 05 58 AM" src="https://github.com/user-attachments/assets/859b2fdb-9128-440c-8e00-10c516a18a1b" />
 
 ## License
 
