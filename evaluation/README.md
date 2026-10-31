@@ -41,38 +41,27 @@ repository, which can differ in detail from the one that cut the sets of the res
 The runners of the other systems (homr, oemer, Audiveris, SMT, Zeus) are not included; these scripts only read the MusicXML
 (or LMX) files those systems wrote, listed in a manifest.
 
-    python -I -X utf8 evaluation/compare/system_ser_models.py selftest
-    python -I -X utf8 evaluation/compare/system_ser_models.py run MANIFEST.json --out results.json [--systems A B] [--pieces X Y] [--dump-systems DIR]
-
-`system_ser_models.py` scores the MusicXML of any system per printed system: the file's bars as LMX (`omr_convert.py`
-repairs what the Linearizer refuses), aligned to the gold measures (`align.py`), grouped by one common partition of the piece
-into systems, and scored as `system_ser.py` does (SER, and SER without stem and beam tokens), plus bar-level SER and the note
-F1 of `score_direct.py` (music21, no LMX). The manifest format is in the script's docstring. `selftest` checks it on made-up bars. MuseScore pads incomplete voices with invisible rests, so by default the scorer removes the hidden-rest groups (`print-object:no rest ...`, with the backup that only served them, and then any dangling backup/forward pair) from both the gold and the prediction before the Levenshtein distance. `--keep-hidden-rests` turns this off.
-
-    python -I -X utf8 evaluation/compare/normalise_formal.py [--only SYSTEM ...]
-
-Passes every MusicXML of the benchmark, the gold included, through MuseScore 4 (path in `MS`), so every system is written by
-the same engraver before it is scored, then drops a restated, unchanged time signature; writes `formal/`, `formal_raw/`,
-`formal/convert_log.json`, `manifest_formal.json` (normalised files only) and `manifest_formal2.json` in the current directory.
-The second manifest adds `fallback_files` to each system entry and `fallback_truth` to each piece (the raw files): the scorer
-then takes a bar from the normalised file only if the linearizer accepts it and its pitched-note count equals the raw bar's,
-otherwise the raw bar, otherwise an empty bar; a gold measure is the normalised one if LMX can write it, else the raw one.
-So no bar is scored empty because of MuseScore or the converter, and the result records how many bars fell back.
-
     python -I -X utf8 evaluation/compare/build_manifest.py
-    python -I -X utf8 evaluation/compare/make_results.py results.json [manifest.json] > tables.md
-    python -I -X utf8 evaluation/compare/verify_consistency.py results.json
-    python -I -X utf8 evaluation/compare/verify_formal.py report|convdet
-    python -I -X utf8 evaluation/compare/spotcheck.py DUMPDIR/NAME__PIECE.json INDEX [--width 40] [--max-rows 60]
 
-`build_manifest.py` writes the manifest from the stored outputs of the earlier comparison (folder named by the environment
-variable `COMPARISON_DIR`, the ASAP scores by `ASAP_DIR`; neither is distributed). `make_results.py` turns `results.json` into
-markdown tables. `verify_consistency.py` checks the bar-level figures against those stored by the earlier comparison.
-`verify_formal.py` checks the MuseScore-normalised benchmark against the raw one (counts conserved, gold, headline, ranking;
-`convdet` converts three files twice and compares hashes). `spotcheck.py` prints one system's gold and predicted tokens side by
-side with a plain dynamic-programming edit count as an independent check of the library's. The scripts that read or write a
-benchmark's files (`build_manifest`, `normalise_formal`, `make_results`, `verify_*`) work in the current directory.
+`build_manifest.py` writes the manifest `f1_models.py` reads, from the stored outputs of the earlier comparison (folder named by
+the environment variable `COMPARISON_DIR`, the ASAP scores by `ASAP_DIR`; neither is distributed). It works in the current
+directory (`pieces_new.json`, `runs/`, `manifest.json`).
 
-Helper modules: `bar_dataset.py` (read MusicXML, find the piano part, linearize it), `compare/omr_convert.py`,
-`compare/align.py`, `compare/score_direct.py` (reduced to the functions used) and `compare/kern_to_musicxml.py` (Humdrum
-**kern to MusicXML, for SMT's output), all taken from the research code without changing what they compute.
+    python -I -X utf8 evaluation/compare/f1_models.py selftest
+    python -I -X utf8 evaluation/compare/f1_models.py run MANIFEST.json --out f1.json [--systems A B] [--pieces X Y] [--no-rests] [--apply-cut A] [--rename "OLD=NEW"]
+    python -I -X utf8 evaluation/compare/f1_models.py merge BASE.json EXTRA.json [EXTRA.json ...] --out MERGED.json
+
+`f1_models.py` is the music-level comparison: note, onset and timed F1 of each system's MusicXML as the system wrote it, read by
+music21 for every system and for the gold alike (`score_direct.py`), with no LMX, MuseScore or normaliser in between. The whole
+piece is the denominator: the events of a measure no bar was aligned to count as misses, those of a bar aligned to no measure as
+false alarms (bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count). It also prints the
+measures found (bars read against measures) and the measures read exactly, and the pooled figures of the sets "ten" (the
+manifest's list `ten`), "four" (its list `engraved`) and "fourteen" (both), each list of piece ids possibly empty. Rests count as events unless
+`--no-rests` is given. `--apply-cut A` scores system A, which read only the first pages, against the first `cut` true measures of
+the manifest (its unread pages are then not misses); `--rename "OLD=NEW"` gives a row another name, so that the same system can
+be run whole and cut, and `merge` adds the rows of such runs to one result. The manifest is the one `build_manifest.py` writes
+(`truth`, and per system and piece `note_files` or `files`, `cut`) plus the two lists. This is the comparison used for the figures
+against other OMR systems; `selftest` checks the scorer on made-up music and files.
+
+Helper modules: `bar_dataset.py` (read MusicXML, find the piano part, linearize it) and `compare/score_direct.py` (reduced to the
+functions used), both taken from the research code without changing what they compute.

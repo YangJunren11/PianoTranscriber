@@ -1,4 +1,4 @@
-"""Write manifest.json for evaluation/compare/system_ser_models.py: the ten pieces of the earlier comparison folder with the outputs stored
+"""Write manifest.json for evaluation/compare/f1_models.py: the ten pieces of the earlier comparison folder with the outputs stored
 there, and the four engraved pieces with the outputs of run_systems.py (runs/ here).
 
   python -I -X utf8 evaluation/compare/build_manifest.py

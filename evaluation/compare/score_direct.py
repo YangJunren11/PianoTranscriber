@@ -34,7 +34,7 @@ that drops a tuplet is still aligned by what it printed; VERIFY_direct_scorer.md
 
 Unaligned measures and bars are left out of the F1s, as in transcribe.accuracy.
 
-Reduced from the research repository's experiments/13_comparison/score_direct.py to the functions system_ser_models.py uses
+Reduced from the research repository's experiments/13_comparison/score_direct.py to the functions f1_models.py uses
 (`measures_of`, `score`); its command line and the runs over stored outputs are not carried.
 """
 
