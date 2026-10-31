@@ -47,7 +47,7 @@ Note F1 of the bundled models on bars never seen in training, read as the pipeli
 
 | Test set | Bars | Note F1 | SER | Timed F1 |
 |---|---:|---:|---:|---:|
-| OLiMPiC scanned test set | 4,490 | 81.2% | 17.1% | 73.3% |
+| OLiMPiC scanned test set | 5,364 | 88.1% | 12.7% | 81.1% |
 | Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.0% | 73.7% |
 | Engraved scores (our test set) | 4,065 | 95.0% | 8.1% | 93.1% |
 

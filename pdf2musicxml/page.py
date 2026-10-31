@@ -12,6 +12,7 @@ at 3 pixels a point to measure it and again at the size wanted, which keeps engr
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
@@ -20,6 +21,8 @@ import numpy as np
 from PIL import Image
 
 SPACE = 9.0  # pixels per staff space, as the pipeline sees a page
+# Lower bound of the scale; PDF2MUSICXML_MIN_SCALE overrides it (a scan with big staves is shrunk further)
+MIN_SCALE = float(os.environ.get("PDF2MUSICXML_MIN_SCALE", "0.15"))  # was 0.4: scans and photos with a staff space over 22 px reached the counter at 10-17 px
 
 
 def staff_space(page: np.ndarray) -> float | None:
@@ -47,7 +50,7 @@ def scale_for(space: float | None, width: int) -> float:
     """How much to scale a page `width` pixels wide whose staff space measured `space`. A page
     without staves is given the size of a typical printed page."""
     scale = SPACE / space if space else 1240 / width * SPACE / 10.3
-    return float(np.clip(scale, 0.4, 2.5))
+    return float(np.clip(scale, MIN_SCALE, 2.5))
 
 
 @dataclass
