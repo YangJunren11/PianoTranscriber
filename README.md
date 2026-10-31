@@ -43,9 +43,11 @@ pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.jso
 
 ## Results
 
-Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist). SER is the symbol error rate over whole systems, as the OLiMPiC paper computes it: the bars of a system joined, one edit distance over LMX tokens per system, pooled over the set:
+Note F1 of the bundled models on bars never seen in training, read as the pipeline runs (main model with the specialist).
 
-| Test set | Bars | Note F1 | SER | Timed F1 |
+SER is scored per system, as the OLiMPiC paper scores it: the bars of a system joined, one edit distance over LMX tokens per system, pooled over the set.
+
+| Test set | Bars | Note F1 | SER (bar cropped correctly) | Timed F1 |
 |---|---:|---:|---:|---:|
 | OLiMPiC scanned test set | 5,364 | 88.1% | 12.7% | 81.1% |
 | Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.0% | 73.7% |
