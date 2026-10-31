@@ -53,8 +53,6 @@ SER is scored per system, as the OLiMPiC paper scores it: the bars of a system j
 | Real scans of printed editions, Baroque to 20th century (our test set) | 4,951 | 81.8% | 24.0% | 73.7% |
 | Engraved scores (our test set) | 4,065 | 95.0% | 8.1% | 93.1% |
 
-On the complete OLiMPiC scanned test set under OLiMPiC's own protocol, all 1,493 systems with every system cut into bars by our bar counter and read, and a system the cutting fails on counted as entirely wrong, the SER is 23.4%. The table's row holds the 4,490 bars whose systems were cut into exactly the right number of bars.
-
 ## Examples
 All scores below are in the public domain.
 
