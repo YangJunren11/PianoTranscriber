@@ -42,7 +42,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pdf2musicxml.lmx_bars import CLEFS, KEYS, STAVES, State  # noqa: E402
+from transcriber.lmx_bars import CLEFS, KEYS, STAVES, State  # noqa: E402
 
 VAL = 20  # without a partition list of its own: one sample in VAL held out for validation, by name
 PAD = 4.0  # staff spaces of white all round
@@ -152,15 +152,15 @@ def init(repo: str) -> None:
     import torch
 
     torch.set_num_threads(1)
-    from pdf2musicxml.bar_counter import BarCounter
+    from transcriber.bar_counter import BarCounter
 
     _counter = BarCounter(repo, threads=1)
 
 
 def process(job) -> tuple[list[dict], collections.Counter, float]:
     from bar_dataset import linearize, piano_part, read
-    from pdf2musicxml.bar_cropper import crop
-    from pdf2musicxml.page import gray, normalise, staff_space
+    from transcriber.bar_cropper import crop
+    from transcriber.page import gray, normalise, staff_space
 
     s, out = job
     started = time.time()

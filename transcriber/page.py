@@ -21,8 +21,8 @@ import numpy as np
 from PIL import Image
 
 SPACE = 9.0  # pixels per staff space, as the pipeline sees a page
-# Lower bound of the scale; PDF2MUSICXML_MIN_SCALE overrides it (a scan with big staves is shrunk further)
-MIN_SCALE = float(os.environ.get("PDF2MUSICXML_MIN_SCALE", "0.15"))  # was 0.4: scans and photos with a staff space over 22 px reached the counter at 10-17 px
+# Lower bound of the scale; TRANSCRIBER_MIN_SCALE overrides it (a scan with big staves is shrunk further)
+MIN_SCALE = float(os.environ.get("TRANSCRIBER_MIN_SCALE", "0.15"))  # was 0.4: scans and photos with a staff space over 22 px reached the counter at 10-17 px
 
 
 def staff_space(page: np.ndarray) -> float | None:

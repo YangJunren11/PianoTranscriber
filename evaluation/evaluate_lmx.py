@@ -1,5 +1,5 @@
 """How right bar recognizers' LMX is, side by side, on the bar dataset's validation bars (or another
-split): each bar read scored against its true LMX by pdf2musicxml/lmx_accuracy.py, as tokens (token
+split): each bar read scored against its true LMX by transcriber/lmx_accuracy.py, as tokens (token
 error rate, bars exact) and as music (notes read in order, pitches, notes in time, the state left for
 the next bar, and whether the bar reads back as MusicXML at all), for every model and every house
 style.
@@ -40,8 +40,8 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from pdf2musicxml.lmx_accuracy import Tally, score_bar, table  # noqa: E402
-from pdf2musicxml.lmx_bars import State, reset_state, reset_tokens, sets_state, true_states  # noqa: E402
+from transcriber.lmx_accuracy import Tally, score_bar, table  # noqa: E402
+from transcriber.lmx_bars import State, reset_state, reset_tokens, sets_state, true_states  # noqa: E402
 
 
 def resets(reader, row: dict) -> bool | str:
@@ -187,7 +187,7 @@ def main() -> int:
             read = {p["image"]: p["lmx"] for p in map(json.loads, f)}
         readings[Path(path).stem] = ([read.get(r["image"], "") for r in rows], states, [r["lmx"] for r in rows])
     if args.models:
-        from pdf2musicxml.bar_recognizer import Reader
+        from transcriber.bar_recognizer import Reader
 
         first = Reader(args.first_model) if args.first_model else None
         starts = Reader(args.starts_model) if args.starts_model else None

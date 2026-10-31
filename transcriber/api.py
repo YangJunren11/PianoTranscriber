@@ -1,5 +1,5 @@
 """PDF to MusicXML from Python: `pdf_to_musicxml` reads one PDF, `Transcriber` keeps the models loaded
-to read many. Both do what `python -m pdf2musicxml.transcribe` does, with the models the repository
+to read many. Both do what `python -m transcriber.transcribe` does, with the models the repository
 ships in `models/` as defaults (a path that is not absolute is taken from the repository's root)."""
 
 from __future__ import annotations

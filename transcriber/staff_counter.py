@@ -14,7 +14,7 @@ The bar counter marks each bar at its barline halfway down its staff lines; the 
 the system that mark falls in, and crops the bar between the barline before it and its own, from
 the system's top to its bottom.
 
-On a page scaled so a staff space is about 9 pixels (`pdf2musicxml.page`), though the space is
+On a page scaled so a staff space is about 9 pixels (`transcriber.page`), though the space is
 measured again here and any size will do:
 
   1. thin strokes: rows of ink twice as dark as the paper a little above and below them, in
@@ -42,7 +42,7 @@ measured again here and any size will do:
 
 Everything is given back in the pixels of the page as it was given, not as it was turned.
 
-  python -m pdf2musicxml.staff_counter score.pdf [--pages 1-3] [--draw out/] [--json out.json]
+  python -m transcriber.staff_counter score.pdf [--pages 1-3] [--draw out/] [--json out.json]
 """
 
 from __future__ import annotations

@@ -2,7 +2,7 @@
 
 Scripts that score the transcriber on test sets and compare it with other OMR systems. Run them from the repository root
 with the packages of `requirements.txt` installed (`python -I -X utf8 ...`; `-I` keeps stray folders off the import path).
-They import only `pdf2musicxml`, `third_party/lmx`, the requirements and the sibling files here. The unit tests are in `tests/`
+They import only `transcriber`, `third_party/lmx`, the requirements and the sibling files here. The unit tests are in `tests/`
 (`python -m pytest tests -q`).
 
 ## Bar-level evaluation of the recognizer

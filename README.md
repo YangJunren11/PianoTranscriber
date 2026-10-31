@@ -26,7 +26,7 @@ before the last command.
 From the repository root:
 
 ```
-python -m pdf2musicxml.transcribe score.pdf --out score.musicxml --json score.json
+python -m transcriber.transcribe score.pdf --out score.musicxml --json score.json
 ```
 
 `--out` is the MusicXML to write; `--json` (optional) writes data about every bar read. To read only some
@@ -36,7 +36,7 @@ The models were trained on 26 October 2026, and the time signature is checked ag
 From Python, from the repository root:
 
 ```python
-from pdf2musicxml import pdf_to_musicxml
+from transcriber import pdf_to_musicxml
 
 pdf_to_musicxml("score.pdf", "score.musicxml", pages="1-3", json_path="score.json")
 ```

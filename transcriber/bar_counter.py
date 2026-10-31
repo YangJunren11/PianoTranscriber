@@ -1,7 +1,7 @@
 """The bar counter's network (github.com/YangJunren11/Bar-counter-for-PDF-Piano-Scores): where each bar
 on a page ends, one peak per bar at its barline halfway down its system. The network and the code that
-finds its peaks are the bar counter's (`pdf2musicxml/barcounter/net.py`, its weights `models/barcounter.pt`),
-so a page is run as in its evaluation; the page is the one `pdf2musicxml.page` makes, scaled as
+finds its peaks are the bar counter's (`transcriber/barcounter/net.py`, its weights `models/barcounter.pt`),
+so a page is run as in its evaluation; the page is the one `transcriber.page` makes, scaled as
 the bar counter scales it. Needs PyTorch.
 """
 

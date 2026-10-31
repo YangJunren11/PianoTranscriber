@@ -5,9 +5,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pdf2musicxml.bar_counter import Peak
-from pdf2musicxml.bar_cropper import MARGIN_X, crop
-from pdf2musicxml.page import SPACE
+from transcriber.bar_counter import Peak
+from transcriber.bar_cropper import MARGIN_X, crop
+from transcriber.page import SPACE
 from test_staff_counter import LEFT, RIGHT, grand_staff, page
 
 BARS = [LEFT + k * (RIGHT - LEFT) / 4 for k in range(1, 5)]

@@ -8,7 +8,7 @@ the bars do not fill is judged and, if another makes them fill, replaced (`read.
 `--no-resolve-time`): `time_resolved` is the time a bar was read again with, else null, and the summary
 counts the systems read again.
 
-  python -m pdf2musicxml.transcribe score.pdf --out score.musicxml [--json score.json] [--pages 1-3,7]
+  python -m transcriber.transcribe score.pdf --out score.musicxml [--json score.json] [--pages 1-3,7]
       [--lmx score.lmx] [--threads N] [--no-batch] [--no-resolve-time]
 
 With no model flags the models in `models/` are used: the bar counter, the main recognizer and the

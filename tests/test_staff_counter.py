@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from PIL import Image, ImageDraw
 
-from pdf2musicxml.page import SPACE, normalise, pdf_pages, staff_space
-from pdf2musicxml.staff_counter import count
+from transcriber.page import SPACE, normalise, pdf_pages, staff_space
+from transcriber.staff_counter import count
 
 W, H = 1000, 1400
 LEFT, RIGHT = 80, 940

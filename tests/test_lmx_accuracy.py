@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from fractions import Fraction
 
-from pdf2musicxml.lmx_accuracy import Tally, score_bar, table
-from pdf2musicxml.lmx_bars import State, notes_of
+from transcriber.lmx_accuracy import Tally, score_bar, table
+from transcriber.lmx_bars import State, notes_of
 
 CONTEXT = "key:fifths:1 time beats:2 beat-type:4 clef:G2 staff:1 clef:G2 staff:2"
 BAR = ("measure D5 voice:1 eighth stem:down staff:1 slur:stop chord F5 eighth D6 quarter D6 eighth tied:start "

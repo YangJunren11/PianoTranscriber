@@ -1,4 +1,4 @@
-"""Trains the bar recognizer (pdf2musicxml/bar_recognizer.py) on the bar dataset (tools/bar_dataset.py).
+"""Trains the bar recognizer (transcriber/bar_recognizer.py) on the bar dataset (tools/bar_dataset.py).
 
 Each bar is given with the state it truly starts from (`lmx_bars.true_states`): its context in the
 dataset, and the notes tied over from the bar before. The crops are clean engravings, so each is made
@@ -9,7 +9,7 @@ only, not on the state in front of them.
 
 Every --check steps the checkpoint is saved, and the validation bars are scored: their loss, and
 --sample of them read as the recognizer reads (each from its true state, the likeliest token at a
-time) and scored by pdf2musicxml/lmx_accuracy.py. With --patience, training stops once the
+time) and scored by transcriber/lmx_accuracy.py. With --patience, training stops once the
 validation loss (or with --stop-on, a score of the bars read, the loss breaking ties) has not
 improved for so many checks, and the checkpoint kept is the best. With
 --init, training goes on from a trained recognizer's weights; with --guard, another dataset's
@@ -67,11 +67,11 @@ import torch
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from pdf2musicxml.bar_recognizer import (EOS, MAX_TOKENS, PAD, ROOT, BarRecognizer, Vocabulary, batch,  # noqa: E402
+from transcriber.bar_recognizer import (EOS, MAX_TOKENS, PAD, ROOT, BarRecognizer, Vocabulary, batch,  # noqa: E402
                                          load_module, prepare, preparer)
-from pdf2musicxml.lmx_accuracy import Tally, score_bar, table  # noqa: E402
-from pdf2musicxml.lmx_bars import State, reset_state, reset_tokens, sets_state, true_states  # noqa: E402
-from pdf2musicxml.page import SPACE  # noqa: E402
+from transcriber.lmx_accuracy import Tally, score_bar, table  # noqa: E402
+from transcriber.lmx_bars import State, reset_state, reset_tokens, sets_state, true_states  # noqa: E402
+from transcriber.page import SPACE  # noqa: E402
 
 
 def records(root: Path, split: str) -> list[dict]:

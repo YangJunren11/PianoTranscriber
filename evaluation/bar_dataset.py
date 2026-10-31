@@ -13,7 +13,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import pdf2musicxml  # noqa: E402,F401  (puts third_party/lmx on the path)
+import transcriber  # noqa: E402,F401  (puts third_party/lmx on the path)
 
 NOT_PIANO = re.compile(r"harp|guitar|organ|accordion|marimba|vibraphone|xylophone|celest|voice|violin|flute", re.I)
 

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pdf2musicxml.lmx_bars import State, standalone
-from pdf2musicxml.reassembly import to_musicxml
+from transcriber.lmx_bars import State, standalone
+from transcriber.reassembly import to_musicxml
 from test_lmx_accuracy import BAR, CONTEXT
 
 
@@ -36,7 +36,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf2musicxml.reassembly import repair, write
+from transcriber.reassembly import repair, write
 
 MUSESCORE = Path(r"C:\Program Files\MuseScore 4\bin\MuseScore4.exe")
 TRIPLET = ("measure key:fifths:0 time beats:2 beat-type:4 clef:G2 staff:1 "
@@ -177,7 +177,7 @@ def test_a_double_flat_keeps_musicxmls_name_and_a_note_without_alter_is_given_on
 
 
 def test_every_accidental_partitura_cannot_name_comes_with_an_alter(tmp_path: Path) -> None:
-    from pdf2musicxml.reassembly import PARTITURA_ACCIDENTALS
+    from transcriber.reassembly import PARTITURA_ACCIDENTALS
 
     path = tmp_path / "accidentals.musicxml"
     write([TIE_THEN_FLAT_FLAT.split(), FLAT_FLAT_TIE_STOP.split(), DOUBLE_FLATS.split()], path)

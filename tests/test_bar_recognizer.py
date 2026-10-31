@@ -9,9 +9,9 @@ import pytest
 torch = pytest.importorskip("torch")
 pytest.importorskip("torchvision")
 
-from pdf2musicxml.bar_recognizer import (EOS, MAX_HEIGHT, MAX_WIDTH, PAD, BarRecognizer, Reader,  # noqa: E402
+from transcriber.bar_recognizer import (EOS, MAX_HEIGHT, MAX_WIDTH, PAD, BarRecognizer, Reader,  # noqa: E402
                                          Vocabulary, batch, prepare)
-from pdf2musicxml.lmx_bars import State  # noqa: E402
+from transcriber.lmx_bars import State  # noqa: E402
 from test_lmx_accuracy import BAR, CONTEXT  # noqa: E402
 
 TINY = {"d_model": 64, "layers": 2, "heads": 4, "feedforward": 128, "dropout": 0.0}

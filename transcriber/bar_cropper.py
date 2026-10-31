@@ -19,8 +19,8 @@ network says bars end and the systems the staff counter finds.
 Bars are numbered from 0 through the score as the bar counter numbers them, by where they end: a
 bar carried over to the next system has the number of the bar it is the start of.
 
-  python -m pdf2musicxml.bar_cropper score.pdf [--pages 1-3] --out crops/
-  python -m pdf2musicxml.bar_cropper page1.png page2.png ... --out crops/
+  python -m transcriber.bar_cropper score.pdf [--pages 1-3] --out crops/
+  python -m transcriber.bar_cropper page1.png page2.png ... --out crops/
 """
 
 from __future__ import annotations

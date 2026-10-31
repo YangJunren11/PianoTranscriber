@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf2musicxml.lmx_bars import State, standalone, tied_over
+from transcriber.lmx_bars import State, standalone, tied_over
 from test_lmx_accuracy import BAR, CONTEXT
 
 DATASET = Path(__file__).resolve().parents[1] / "data" / "bars_lmx" / "bars.jsonl"

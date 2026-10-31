@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from pdf2musicxml.lmx_bars import reset_tokens, true_states  # noqa: E402
+from transcriber.lmx_bars import reset_tokens, true_states  # noqa: E402
 
 
 def edits(a: list[str], b: list[str]) -> int:
