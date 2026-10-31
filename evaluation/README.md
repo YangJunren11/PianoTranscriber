@@ -45,7 +45,10 @@ The runners of the other systems (homr, oemer, Audiveris, SMT, Zeus) are not inc
 
 `build_manifest.py` writes the manifest `f1_models.py` reads, from the stored outputs of the earlier comparison (folder named by
 the environment variable `COMPARISON_DIR`, the ASAP scores by `ASAP_DIR`; neither is distributed). It works in the current
-directory (`pieces_new.json`, `runs/`, `manifest.json`).
+directory (`pieces_new.json`, `runs/`, `manifest.json`). Every system, the pipeline here included, gets an entry for every piece
+it was run on (its output folder exists): a run that wrote nothing is kept with an empty file list and `"status": "failed"`, and
+scores 0 on that piece, so a failure cannot drop a piece out of a system's pooled figures. A system with no folder for a piece
+was never run on it and is listed as not run. The summary printed names the pieces each system failed on and was not run on.
 
     python -I -X utf8 evaluation/compare/f1_models.py selftest
     python -I -X utf8 evaluation/compare/f1_models.py run MANIFEST.json --out f1.json [--systems A B] [--pieces X Y] [--no-rests] [--apply-cut A] [--rename "OLD=NEW"]
@@ -54,7 +57,11 @@ directory (`pieces_new.json`, `runs/`, `manifest.json`).
 `f1_models.py` is the music-level comparison: note, onset and timed F1 of each system's MusicXML as the system wrote it, read by
 music21 for every system and for the gold alike (`score_direct.py`), with no LMX, MuseScore or normaliser in between. The whole
 piece is the denominator: the events of a measure no bar was aligned to count as misses, those of a bar aligned to no measure as
-false alarms (bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count). It also prints the
+false alarms (bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count, on the measures' sounding
+pitches and durations, the facts the F1s compare, so that a spelling cannot change a figure). Every note a system writes counts,
+those on a third or later staff included (they match nothing of a two-staff gold under note, pitch and timed F1, which need the
+staff; onset F1 takes any staff), and the order of the voices in a file cannot
+change a figure. It also prints the
 measures found (bars read against measures) and the measures read exactly, and the pooled figures of the sets "ten" (the
 manifest's list `ten`), "four" (its list `engraved`) and "fourteen" (both), each list of piece ids possibly empty. Rests count as events unless
 `--no-rests` is given. `--apply-cut A` scores system A, which read only the first pages, against the first `cut` true measures of
@@ -63,5 +70,8 @@ be run whole and cut, and `merge` adds the rows of such runs to one result. The 
 (`truth`, and per system and piece `note_files` or `files`, `cut`) plus the two lists. This is the comparison used for the figures
 against other OMR systems; `selftest` checks the scorer on made-up music and files.
 
-Helper modules: `bar_dataset.py` (read MusicXML, find the piano part, linearize it) and `compare/score_direct.py` (reduced to the
-functions used), both taken from the research code without changing what they compute.
+Helper modules: `bar_dataset.py` (read MusicXML, find the piano part, linearize it), taken from the research code without changing
+what it computes, and `compare/score_direct.py` (reduced to the functions used), which differs from the research code in three
+things a review of the scorer found: extra parts are kept rather than cut to two, measures are aligned by sounding pitch and
+duration rather than by written step and printed note type, and the reading order of a staff's notes breaks ties by duration
+rather than by the voices' order in the file. `tests/test_compare_scorer.py` holds those cases.

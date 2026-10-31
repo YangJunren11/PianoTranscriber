@@ -2,8 +2,8 @@
 
 Scoring a benchmark by SER over LMX tokens makes a system that does not write LMX pay
 for the conversion into it. Here every system's output file, as it hands it to a user, is read by music21 the same way as
-the gold (evaluation/compare/score_direct.py: measures_of, in_order, multiset, none of it changed) and compared
-note by note. Nothing goes through LMX, MuseScore or a normaliser.
+the gold (evaluation/compare/score_direct.py: measures_of, in_order, multiset) and compared note by note. Nothing goes
+through LMX, MuseScore or a normaliser.
 
 What is scored for a system on a piece
   files   the manifest's "note_files" where there are some (Zeus: its score.musicxml; ours: its own .musicxml), else
@@ -21,24 +21,31 @@ What is scored for a system on a piece
           the measures it did not attempt. Whole-piece rows and cut rows are separate rows (use --rename to name them).
   absent  a system with no manifest entry for a piece (never run on it) is left out of that piece and of the pooled
           sums, and listed under "not_run" (printed, and shown as [n of m pieces]). A system that ran and wrote nothing
-          needs an entry with an empty file list ("files": []) to count as 0 on that piece.
+          has an entry with an empty file list (build_manifest.py writes one, with "status": "failed", for every system
+          it finds a run folder and no output for, the pipeline here included) and counts as 0 on that piece; the row
+          notes it, and a footnote names those pieces. Only the manifest decides: a system is never dropped from a
+          piece because its output is missing.
 
 An event is the tuple score_direct.measures_of makes, one for each note of a chord and each rest, per measure, staves
-merged (the first two parts that hold notes, or the two staves of one part):
+merged (the parts of the file, or the staves of one part, in order):
     (staff, onset, pitch, duration, grace, step_octave, printed_type)
-  staff 1 or 2: the position of the part (the first part is staff 1) or of the staff within a part, so a system that
-  writes the bass part first has its notes on the wrong staff; onset in quarters from the measure's start (voices
+  staff: the position of the part (the first part is staff 1) or of the staff within a part, so a system that writes
+  the bass part first has its notes on the wrong staff. A file of more than two parts numbers the parts that hold notes
+  1, 2, 3, ... and keeps them all: the events of a third staff are events found (they cost precision) and can match
+  nothing of a two-staff truth under note, pitch and timed F1; onset in quarters from the measure's start (voices
   flattened, snapped to note values); pitch the MIDI number, -1 for a rest (RESTS COUNT unless --no-rests, with their
   durations; hidden <forward> rests never); duration in quarters, 0 for a grace note; grace a bool; step_octave ("C4",
-  "rest") and printed_type ("quarter") are used only to align measures.
+  "rest") and printed_type ("quarter") are kept for the record and used by nothing.
 
 Bars are aligned to measures by Needleman-Wunsch, always (gap cost 0.3 over the cosine similarity of the measures' notes,
-score_direct's dynamic programme). score_direct.align pairs bars by position instead when the counts happen to be equal,
-which scores 0 for a system that dropped the first measure and added a spurious one; here the same alignment is run for
-every system and piece, whatever its bar count. Then, over the aligned pairs only, the matches are counted as
-score_direct.score counts them:
-  note   in_order, per staff: longest common run of the events sorted by (onset, grace first, pitch), compared by
-         (pitch, duration, grace)
+score_direct's dynamic programme; a measure's features are its sounding pitches and its musical durations, the facts the
+F1s compare, so a C sharp aligns with a D flat and no spelling can change a figure). score_direct.align pairs bars by
+position instead when the counts happen to be equal, which scores 0 for a system that dropped the first measure and added
+a spurious one; here the same alignment is run for every system and piece, whatever its bar count. Then, over the aligned
+pairs only, the matches are counted as score_direct.score counts them:
+  note   in_order, per staff: longest common run of the events sorted by (onset, grace first, pitch, duration), compared
+         by (pitch, duration, grace); the sort key holds every field compared, so the voices' order in the file cannot
+         change the count
   pitch  in_order, the same sort, compared by pitch alone
   onset  multiset intersection, any staff, compared by (onset, pitch)
   timed  multiset intersection, compared by (staff, onset, pitch, duration, grace)
@@ -58,8 +65,10 @@ Two continuity figures, neither of them a headline:
                   they hold no event, and "matched_only_empty" says so): what the score would be if missed measures and
                   unmatched bars cost nothing.
   direct_*        score_direct.score itself, as experiment 13 ran it: the truth cut to the manifest's "cut" where there is
-                  one, score_direct's own alignment (positional when the counts are equal). Row for row the figure of
-                  the research repository's experiments/13_comparison/direct_scores.json, so this is the continuity figure with experiment 13. Per
+                  one, score_direct's own alignment (positional when the counts are equal). The figure of the research
+                  repository's experiments/13_comparison/direct_scores.json, so this is the continuity figure with
+                  experiment 13, except where one of score_direct's fixes bites (a third part, an enharmonic spelling
+                  that changed the alignment, simultaneous notes of one pitch in two voices; see score_direct). Per
                   piece and as a mean only: an F1 cannot be pooled from counts of a different alignment.
 matched_only_* is NOT score_direct.score's figure: it equals direct_* except (a) where experiment 13 cut the truth (the
 rows with a "cut_ignored"), and (b) where the bar count equals the measure count and the
@@ -121,16 +130,23 @@ MEANED = ([f"{c}_{x}" for c in CRITERIA for x in ("P", "R", "F1")]
 DIRECT = [f"direct_{c}_F1" for c in CRITERIA]  # score_direct.score's own figures; averaged only, never pooled from counts
 
 DEFINITIONS = {
-    "event": "(staff, onset, pitch, duration, grace, step_octave, printed_type) as score_direct.measures_of makes it",
+    "event": "(staff, onset, pitch, duration, grace, step_octave, printed_type) as score_direct.measures_of makes it; "
+             "every part's events are kept, the last two fields are for the record only",
     "alignment": "Needleman-Wunsch for every system and piece, whatever the bar count (score_direct.align's dynamic "
-                 "programme without its equal-count shortcut, which pairs bars by position)",
+                 "programme without its equal-count shortcut, which pairs bars by position), over the cosine similarity of "
+                 "the measures' sounding pitches and musical durations (not their spelling or printed note types)",
     "rests": "rests are events with durations and count by default (--no-rests leaves them out of both sides): a "
              "shortened visible rest is a changed event (note and timed F1 drop) and moves the notes after it (onset and "
              "timed F1 drop); hidden <forward> never counts",
     "staff": "staff = position of the part (first part is staff 1) or of the staff within a part; note, pitch and timed "
-             "F1 need the right staff, onset F1 does not (a system that writes the bass part first scores 0 on the three)",
-    "note": "in_order per staff, events sorted by (onset, grace first, pitch), compared by (pitch, duration, grace)",
+             "F1 need the right staff, onset F1 does not (a system that writes the bass part first scores 0 on the three). "
+             "A file of more than two parts numbers the parts with notes 1, 2, 3, ...: the events of a third staff count "
+             "as events found and match nothing of a two-staff truth under the three",
+    "note": "in_order per staff, events sorted by (onset, grace first, pitch, duration), compared by (pitch, duration, "
+            "grace); the order does not depend on the voices' order in the file",
     "pitch": "in_order per staff, the same sort, compared by pitch",
+    "status": "the manifest's run status of the system on the piece: ok (it wrote output), failed (it ran and wrote "
+              "nothing: an empty file list, scored 0 and kept in the pooled figures)",
     "onset": "multiset, any staff, compared by (onset, pitch)",
     "timed": "multiset, compared by (staff, onset, pitch, duration, grace)",
     "precision": "tp / events_found of ALL bars read (0.0 if none)",
@@ -146,7 +162,8 @@ DEFINITIONS = {
     "realigned": "True when the bar count equals the measure count and the content alignment is not the diagonal: "
                  "score_direct pairs those bars by position, this tool by content, so direct_* and matched_only_* differ",
     "direct": "score_direct.score as experiment 13 ran it (truth cut to the manifest's cut where there is one, score_direct's "
-              "own alignment): the figure of experiments/13_comparison/direct_scores.json; per piece and mean only",
+              "own alignment): the figure of experiments/13_comparison/direct_scores.json, except where score_direct's fixes "
+              "bite (extra parts kept, alignment by sounding pitch, reading order by duration too); per piece and mean only",
     "pooled": "micro = sums of tp / events_found / events_true over the pieces; mean = mean of the pieces' own figures. "
               "Over the pieces a system has a manifest entry for (see not_run); pieces_in_set is the whole set",
     "cut_ignored": "the page cut experiment 13 used (a system that read only the first pages); NOT applied here",
@@ -337,10 +354,13 @@ def score_manifest(manifest: dict, piece_ids: list[str], systems: list[str], res
                 truths[piece] = sd.measures_of(Path(manifest["pieces"][piece]["truth"]), [])
             notes: list[str] = []
             files = system_files(entry)
+            status = entry.get("status") or ("ok" if files else "failed")
+            if not files:
+                notes.append("no output: the system ran and wrote nothing (scored 0)")
             read = read_files(files, notes)
             applied = system in apply_cut
             r = score_events(read, truths[piece], rests, entry.get("cut"), applied)
-            r.update(files=files, notes=notes, cut_ignored=None if applied else entry.get("cut"))  # no wall-clock time in the row: the file must be reproducible
+            r.update(files=files, status=status, notes=notes, cut_ignored=None if applied else entry.get("cut"))  # no wall-clock time in the row: the file must be reproducible
             if applied:
                 r["cut_applied"] = entry.get("cut")
             rows[label][piece] = r
@@ -356,13 +376,16 @@ def footnotes(rows: dict[str, dict], not_run: dict[str, list[str]], rests: bool)
     out = [
         "Every system's own MusicXML is read by music21 the same way as the gold; the whole piece is the denominator: "
         "events of measures no bar was aligned to count as false negatives, events of bars aligned to no measure as false "
-        "positives. Bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count.",
+        "positives. Bars are aligned to measures by Needleman-Wunsch for every system, whatever its bar count, on the "
+        "measures' sounding pitches and durations (not their spelling), the same facts the F1s compare.",
         ("Rests count as events with durations in every figure, so a shortened visible rest costs note and timed F1 and, "
          "by moving the notes after it, onset and timed F1 (--no-rests: pitched notes only)." if rests else
          "Rests are left out of both sides (--no-rests): pitched notes only."),
         "Note, pitch and timed F1 need the right staff (the first part, or the upper staff of one part, is staff 1); onset "
-        "F1 (pitch and position in the bar) does not. F1 is blind to clefs, keys, time signatures, voices, beams, slurs "
-        "and articulations except where they change a note.",
+        "F1 (pitch and position in the bar) does not. Every note a system writes counts, those on a third or later staff "
+        "included (they match nothing of a two-staff gold under the three that need the staff). F1 is blind to clefs, keys, "
+        "time signatures, voices, beams, "
+        "slurs and articulations except where they change a note.",
         "measures found = bars read against measures (a bar is aligned to a measure whatever it holds); measures exact = "
         "bars whose events all agree under the timed criterion, the stricter count.",
     ]
@@ -381,11 +404,16 @@ def footnotes(rows: dict[str, dict], not_run: dict[str, list[str]], rests: bool)
         out.append("Read only part of the piece (a first page or some pages; experiment 13 scored these against the first "
                    "measures only, here the unread measures are misses): "
                    + "; ".join(f"{s} on {len(p)} piece{'s' if len(p) != 1 else ''} ({', '.join(p)})" for s, p in cut.items()) + ".")
+    failed = {s: sorted(p for p, r in by.items() if not r.get("files")) for s, by in rows.items()}
+    failed = {s: p for s, p in failed.items() if p}
+    if failed:
+        out.append("Ran and wrote nothing, scored 0 and kept in the pooled figures: "
+                   + "; ".join(f"{s} on {len(p)} piece{'s' if len(p) != 1 else ''} ({', '.join(p)})" for s, p in failed.items()) + ".")
     absent = {s: p for s, p in not_run.items() if p}
     if absent:
         out.append("Pooled figures cover the pieces a system has a manifest entry for; left out, not scored 0: "
                    + "; ".join(f"{s} on {', '.join(p)}" for s, p in absent.items())
-                   + ". A system that ran and wrote nothing needs an entry with an empty file list to count as 0.")
+                   + ". A system that ran and wrote nothing has an entry with an empty file list and counts as 0.")
     realigned = {s: sorted(p for p, r in by.items() if r.get("realigned")) for s, by in rows.items()}
     realigned = {s: p for s, p in realigned.items() if p}
     if realigned:
@@ -509,7 +537,7 @@ WHITE = [(s, o, 12 * (o + 1) + p) for o in range(2, 9) for s, p in zip("CDEFGAB"
 
 
 def ev(degree: int, onset: float = 0.0, dur: float = 1.0, staff: int = 1, grace: bool = False, kind: str = "quarter"):
-    """An event on the white key `degree` (so that its step_octave, which aligns measures, agrees with its pitch)."""
+    """An event on the white key `degree`, its step_octave spelt as its pitch sounds (for the record: nothing uses it)."""
     s, o, midi = WHITE[degree]
     return (staff, sd.Fraction(onset), midi, sd.Fraction(0 if grace else dur), grace, f"{s}{o}", kind)
 
@@ -519,17 +547,36 @@ def bar(k: int, n: int = 4) -> list:
     return [ev(3 * k + i, onset=i) for i in range(n)]
 
 
+TYPES = {4: "whole", 2: "half", 1: "quarter", 0.5: "eighth"}  # quarters -> printed note type
+
+
+def toy_score(parts: list[list[list[tuple]]]) -> str:
+    """A 4/4 MusicXML score of several parts: parts[p][m] is measure m of part p, a list of notes
+    (step, alter, octave, quarters, voice); a change of voice backs up to the measure's start, so that the voices'
+    notes sound together."""
+    part_list = "".join(f'<score-part id="P{p}"><part-name>p{p}</part-name></score-part>' for p in range(1, len(parts) + 1))
+    body = ""
+    for p, measures in enumerate(parts, 1):
+        body += f'<part id="P{p}">'
+        for k, notes in enumerate(measures, 1):
+            attrs = ("<attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time>"
+                     "<clef><sign>G</sign><line>2</line></clef></attributes>") if k == 1 else ""
+            body += f'<measure number="{k}">{attrs}'
+            voice = None
+            for step, alter, octave, quarters, v in notes:
+                if voice is not None and v != voice:
+                    body += "<backup><duration>16</duration></backup>"
+                voice = v
+                body += (f"<note><pitch><step>{step}</step>{f'<alter>{alter}</alter>' if alter else ''}<octave>{octave}</octave></pitch>"
+                         f"<duration>{int(quarters * 4)}</duration><voice>{v}</voice><type>{TYPES[quarters]}</type></note>")
+            body += "</measure>"
+        body += "</part>"
+    return f'<?xml version="1.0" encoding="UTF-8"?><score-partwise version="3.1"><part-list>{part_list}</part-list>{body}</score-partwise>'
+
+
 def toy_musicxml(measures: list[list[tuple[str, int]]]) -> str:
     """A one-staff 4/4 MusicXML score with a quarter note for each (step, octave) of each measure."""
-    body = ""
-    for k, notes in enumerate(measures, 1):
-        attrs = ("<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time>"
-                 "<clef><sign>G</sign><line>2</line></clef></attributes>") if k == 1 else ""
-        body += f'<measure number="{k}">{attrs}' + "".join(
-            f"<note><pitch><step>{s}</step><octave>{o}</octave></pitch><duration>1</duration><type>quarter</type></note>"
-            for s, o in notes) + "</measure>"
-    return ('<?xml version="1.0" encoding="UTF-8"?><score-partwise version="3.1"><part-list><score-part id="P1">'
-            f'<part-name>x</part-name></score-part></part-list><part id="P1">{body}</part></score-partwise>')
+    return toy_score([[[(s, 0, o, 1, 1) for s, o in notes] for notes in measures]])
 
 
 def selftest() -> int:
@@ -683,6 +730,42 @@ def selftest() -> int:
     check("onset F1 = 1", r["onset_F1"], 1.0)
     check("the right staves score 1", derive(count(two, two))["timed_F1"], 1.0)
 
+    print("alignment by sounding pitch: a C sharp read against a truth of C then C sharp, or C then D flat, scores alike")
+    c_sharp = lambda spelt: (1, sd.Fraction(0), 61, sd.Fraction(1), False, spelt, "quarter")  # MIDI 61 however it is spelt
+    c_natural = (1, sd.Fraction(0), 60, sd.Fraction(1), False, "C4", "quarter")
+    for spelt in ("C4", "D4"):
+        truth_ = [[c_natural], [c_sharp(spelt)]]
+        check(f"truth spelt C, {spelt}: the one bar read aligns with the second measure", align([[c_sharp("C4")]], truth_), [(None, 0), (0, 1)])
+        r = derive(count([[c_sharp("C4")]], truth_))
+        for c in CRITERIA:
+            check(f"truth spelt C, {spelt}: {c} F1 = 2/3", r[f"{c}_F1"], 2 / 3)
+    check("the alignment features are pitches and durations, not spellings or printed types",
+          sorted(set(sd.features([[c_sharp("C4"), c_natural]]))), [("duration", sd.Fraction(1)), ("pitch", 60), ("pitch", 61)])
+    check("a bar's vector: a count per pitch, half a count per duration",
+          sd.vector([c_sharp("C4"), c_natural], sd.features([[c_sharp("C4"), c_natural]])).tolist(), [1.0, 1.0, 1.0])
+    check("a triplet eighth and an eighth are different durations to the alignment",
+          len(sd.features([[ev(0, dur=1 / 3), ev(0, dur=0.5)]])), 3)
+
+    print("a third part is kept: its events count as events found and match nothing of a two-staff truth under note, pitch and timed F1")
+    three = [[ev(3 * k, onset=0, staff=1), ev(3 * k + 1, onset=0, staff=2), ev(3 * k + 2, onset=0, staff=3)] for k in range(10)]
+    two_staves = [[e for e in b if e[0] <= 2] for b in three]
+    r = derive(count(three, two_staves))
+    check("events found 30, true 20", (r["events_found"], r["events_true"]), (30, 20))
+    for c in CRITERIA:
+        check(f"{c} F1 = 40/50", r[f"{c}_F1"], 0.8)
+    check("the truth with a third staff the reading lacks: recall 20/30", derive(count(two_staves, three))["note_R"], 2 / 3)
+    check("all measures still aligned", (r["measures_matched"], r["measures_exact"]), (10, 0))
+
+    print("the reading order is the voices' order in the file no longer: simultaneous notes of one pitch sort by duration")
+    quarter = (1, sd.Fraction(0), 60, sd.Fraction(1), False, "C4", "quarter")
+    half = (1, sd.Fraction(0), 60, sd.Fraction(2), False, "C4", "half")
+    for name, read in {"same order": [[quarter, half]], "voices swapped": [[half, quarter]]}.items():
+        r = derive(count(read, [[quarter, half]]))
+        check(f"{name}: all four F1 = 1", tuple(r[f"{c}_F1"] for c in CRITERIA), (1.0,) * 4)
+    check("the order key holds every field in_order compares", sd.order(half), (sd.Fraction(0), True, 60, sd.Fraction(2)))
+    check("a grace note still comes first, a chord still from the bottom up",
+          [e[2] for e in sorted([ev(5, onset=0), ev(3, onset=0, grace=True), ev(1, onset=0)], key=sd.order)], [WHITE[3][2], WHITE[1][2], WHITE[5][2]])
+
     print("pooling: micro (sums) against the mean of the pieces")
     zero = dict.fromkeys(COUNTS, 0)
     one = {**zero, "measures": 10, "measures_matched": 10, "measures_exact": 10, "bars_read": 10, "events_true": 10,
@@ -783,22 +866,59 @@ def selftest() -> int:
             Path(files[name]).write_text(toy_musicxml(ms), encoding="utf-8")
         lmx = tmp / "bars.lmx"
         lmx.write_text("measure C4", encoding="utf-8")
-        p = lambda t: {"title": t, "period": "x", "split": "x", "set": "ten", "truth": files["gold"]}
-        manifest = {"pieces": {"p1": p("p1"), "p2": p("p2")}, "ten": ["p1", "p2"], "engraved": [],
+        # two staves, and the same with a third part of one note a measure
+        bass = [[("C", 0, 3, 1, 1)] for _ in measures]
+        files["two"] = str(tmp / "two.musicxml")
+        Path(files["two"]).write_text(toy_score([[[(s, 0, o, 1, 1) for s, o in m] for m in measures], bass]), encoding="utf-8")
+        files["three"] = str(tmp / "three.musicxml")
+        Path(files["three"]).write_text(toy_score([[[(s, 0, o, 1, 1) for s, o in m] for m in measures], bass, [[("E", 0, 5, 1, 1)] for _ in measures]]), encoding="utf-8")
+        p = lambda t, truth="gold": {"title": t, "period": "x", "split": "x", "set": "ten", "truth": files[truth]}
+        manifest = {"pieces": {"p1": p("p1"), "p2": p("p2"), "p3": p("p3", "two")}, "ten": ["p1", "p2", "p3"], "engraved": [],
                     "systems": {"A": {"p1": {"files": [files["gold"]]}, "p2": {"files": [files["gold"]]}},
-                                "B": {"p1": {"files": []}, "p2": {"files": [files["gold"]]}},
+                                "B": {"p1": {"files": [], "status": "failed"}, "p2": {"files": [files["gold"]], "status": "ok"}},
                                 "C": {"p1": {"files": [files["gold"]]}},
                                 "D": {"p1": {"files": [files["first2"]], "cut": 2}, "p2": {"files": [files["first2"]], "cut": 2}},
                                 "E": {"p1": {"files": [files["dropped"]]}, "p2": {"files": [str(lmx)], "note_files": [files["gold"]]}},
-                                "F": {"p1": {"files": [str(lmx)]}}}}
-        rows, not_run = score_manifest(manifest, ["p1", "p2"], ["A", "B", "C", "D", "E", "F"], True)
-        res = build(manifest, ["p1", "p2"], rows, True, "toy.json", not_run)
+                                "F": {"p1": {"files": [str(lmx)]}},
+                                "G": {"p3": {"files": [files["three"]]}},
+                                "H": {"p3": {"files": [files["two"]]}}}}
+        rows, not_run = score_manifest(manifest, ["p1", "p2", "p3"], ["A", "B", "C", "D", "E", "F", "G", "H"], True)
+        res = build(manifest, ["p1", "p2", "p3"], rows, True, "toy.json", not_run)
         a = rows["A"]["p1"]
         check("A: all four F1 = 1, 4/4 measures, 4 exact", (a["timed_F1"], a["note_F1"], a["measures_found"], a["measures_exact"]), (1.0, 1.0, 1.0, 4))
+        check("A: status ok (no status in the manifest: it has files)", a["status"], "ok")
         b = rows["B"]["p1"]
         check("B: empty file list scores 0 and is kept", (b["note_F1"], b["events_found"], b["measures_missed"]), (0.0, 0, 4))
+        check("B: status failed, noted in the row", (b["status"], any(n.startswith("no output") for n in b["notes"])), ("failed", True))
         check("B: pooled over 2 pieces, micro recall 16 of 32 events", (res["pooled"]["ten"]["B"]["n_pieces"], res["pooled"]["ten"]["B"]["micro"]["note_R"]), (2, 0.5))
-        check("C: no entry for p2: not scored, not run", (list(rows["C"]), not_run["C"], res["pooled"]["ten"]["C"]["n_pieces"]), (["p1"], ["p2"], 1))
+        check("B: the footnote names the piece it wrote nothing on", any(s.startswith("Ran and wrote nothing") and "B on 1 piece (p1)" in s for s in res["footnotes"]), True)
+        check("no such footnote when every system wrote something", any("Ran and wrote nothing" in s for s in footnotes({"A": rows["A"]}, {"A": []}, True)), False)
+        g, h = rows["G"]["p3"], rows["H"]["p3"]
+        check("H: two staves against two staves: all four F1 = 1, 20 events", (tuple(h[f"{c}_F1"] for c in CRITERIA), h["events_found"]), ((1.0,) * 4, 20))
+        check("G: a third part of 4 notes is counted: 24 events found, 20 true", (g["events_found"], g["events_true"]), (24, 20))
+        check("G: note and timed F1 = 40/44, the third staff's notes matching nothing", (g["note_F1"], g["timed_F1"]), (40 / 44, 40 / 44))
+        check("G: measures still all aligned, none exact", (g["measures_found"], g["measures_exact"]), (1.0, 0))
+        check("G: the note says what became of the third part", any("3 parts with notes" in n and "match nothing" in n for n in g["notes"]), True)
+        # spellings and voices through music21: files that sound alike score alike
+        sharp = str(tmp / "sharp.musicxml")
+        Path(sharp).write_text(toy_score([[[("C", 0, 4, 1, 1)], [("C", 1, 4, 1, 1)]]]), encoding="utf-8")
+        flat = str(tmp / "flat.musicxml")
+        Path(flat).write_text(toy_score([[[("C", 0, 4, 1, 1)], [("D", -1, 4, 1, 1)]]]), encoding="utf-8")
+        one_sharp = str(tmp / "one_sharp.musicxml")
+        Path(one_sharp).write_text(toy_score([[[("C", 1, 4, 1, 1)]]]), encoding="utf-8")
+        read_ = sd.measures_of(Path(one_sharp), [])
+        r_sharp, r_flat = derive(count(read_, sd.measures_of(Path(sharp), []))), derive(count(read_, sd.measures_of(Path(flat), [])))
+        check("a C sharp read: the same figures against a truth spelt C sharp and one spelt D flat",
+              [r_sharp[f"{c}_F1"] for c in CRITERIA], [r_flat[f"{c}_F1"] for c in CRITERIA])
+        check("and they are 2/3, the bar aligned with the measure that sounds the same", r_flat["note_F1"], 2 / 3)
+        v12 = str(tmp / "v12.musicxml")
+        Path(v12).write_text(toy_score([[[("C", 0, 4, 1, 1), ("C", 0, 4, 2, 2)]]]), encoding="utf-8")
+        v21 = str(tmp / "v21.musicxml")
+        Path(v21).write_text(toy_score([[[("C", 0, 4, 2, 1), ("C", 0, 4, 1, 2)]]]), encoding="utf-8")
+        e12, e21 = sd.measures_of(Path(v12), []), sd.measures_of(Path(v21), [])
+        check("two voices' simultaneous C4s, quarter and half: music21 lists them in the file's order", [e[3] for e in e21[0]], [sd.Fraction(2), sd.Fraction(1)])
+        check("the voices renumbered: all four F1 = 1", tuple(derive(count(e21, e12))[f"{c}_F1"] for c in CRITERIA), (1.0,) * 4)
+        check("C: no entry for p2 and p3: not scored, not run", (list(rows["C"]), not_run["C"], res["pooled"]["ten"]["C"]["n_pieces"]), (["p1"], ["p2", "p3"], 1))
         d = rows["D"]["p1"]
         check("D: whole piece, first 2 of 4 measures read: recall 0.5, precision 1, found 2/4", (d["note_R"], d["note_P"], d["measures_found"]), (0.5, 1.0, 0.5))
         check("D: cut recorded, applied only to direct_*: direct 1.0 on 2 measures", (d["cut_ignored"], d["direct_note_F1"], d["direct_truth_measures"]), (2, 1.0, 2))
@@ -824,14 +944,14 @@ def selftest() -> int:
         check("the definitions carry realigned and the rests/staff sentences", all(k in DEFINITIONS for k in ("realigned", "rests", "staff", "alignment", "matched_only", "direct")), True)
         check("JSON-able", bool(json.dumps(res, default=str)), True)
         # --apply-cut and --rename through score_manifest, and merge
-        rows_c, nr_c = score_manifest(manifest, ["p1", "p2"], ["D"], True, apply_cut={"D"}, rename={"D": "D, scored on the cut"})
+        rows_c, nr_c = score_manifest(manifest, ["p1", "p2", "p3"], ["D"], True, apply_cut={"D"}, rename={"D": "D, scored on the cut"})
         dc = rows_c["D, scored on the cut"]["p1"]
         check("rename: the row has the new label only", list(rows_c), ["D, scored on the cut"])
         check("D cut: truth truncated to 2 measures: recall 1.0, measures 2, found 2/2, exact 2", (dc["note_R"], dc["measures"], dc["measures_found"], dc["measures_exact"]), (1.0, 2, 1.0, 2))
         check("D cut: cut_applied 2, cut_ignored None", (dc["cut_applied"], dc["cut_ignored"]), (2, None))
         check("D cut: direct_* the same as D whole-piece's", all(dc[f"direct_{c}_F1"] == d[f"direct_{c}_F1"] for c in CRITERIA), True)
         check("a row not named in apply_cut has no cut_applied key (so a run without --apply-cut is byte-identical to before)", "cut_applied" in d, False)
-        res_c = build(manifest, ["p1", "p2"], rows_c, True, "toy.json", nr_c)
+        res_c = build(manifest, ["p1", "p2", "p3"], rows_c, True, "toy.json", nr_c)
         check("the cut row's pooled ten: 2 pieces, 4 measures, found 4", (res_c["pooled"]["ten"]["D, scored on the cut"]["n_pieces"], res_c["pooled"]["ten"]["D, scored on the cut"]["micro"]["measures"], res_c["pooled"]["ten"]["D, scored on the cut"]["micro"]["measures_matched"]), (2, 4, 4))
         check("cut_applied is defined in a result that has such a row, not in one that has none", ("cut_applied" in res_c["definitions"], "cut_applied" in res["definitions"]), (True, False))
         check("the footnote names the cut row and its cuts", any("D, scored on the cut on 2 pieces (p1 2, p2 2)" in x for x in res_c["footnotes"]), True)
