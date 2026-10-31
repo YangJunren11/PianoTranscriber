@@ -108,7 +108,6 @@ class System:
     staves: list[Staff]
     above: float = 0.0
     below: float = 0.0
-    bars: list[float] = field(default_factory=list)  # where each bar ends, from the bar tracker
 
     @property
     def x0(self) -> float:
@@ -142,7 +141,7 @@ class System:
         return {"x0": r(self.x0), "x1": r(self.x1), "above": r(self.above), "below": r(self.below),
                 "top": [[r(x), r(self.top(x))] for x in (self.x0, self.x1)],
                 "bottom": [[r(x), r(self.bottom(x))] for x in (self.x0, self.x1)],
-                "staves": [s.as_dict() for s in self.staves], **({"bars": [r(x) for x in self.bars]} if self.bars else {})}
+                "staves": [s.as_dict() for s in self.staves]}
 
 
 @dataclass
@@ -189,7 +188,7 @@ def count(page: np.ndarray, space: float | None = None) -> Layout:
 @dataclass
 class Level:
     """A page as the staff counter works on it: its darkness turned so its staff lines are level,
-    and the systems found there. The bar tracker works on it too."""
+    and the systems found there."""
 
     width: int  # of the page as given
     height: int
@@ -212,9 +211,7 @@ class Level:
         w, h = self.width, self.height
         systems = []
         for system in self.systems:
-            middle = (system.lines_top(system.x0) + system.lines_bottom(system.x0)) / 2
-            systems.append(System([unturn(s, self.turned, w, h) for s in system.staves], system.above, system.below,
-                                  [self.back(x, middle)[0] for x in system.bars]))
+            systems.append(System([unturn(s, self.turned, w, h) for s in system.staves], system.above, system.below))
         space = float(np.median([s.space for x in systems for s in x.staves])) if systems else self.space
         return Layout(w, h, space, math.degrees(self.angle), systems)
 

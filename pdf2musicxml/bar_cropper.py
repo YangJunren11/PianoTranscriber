@@ -4,7 +4,7 @@ network says bars end and the systems the staff counter finds.
   1. each peak of the network (a bar's end, at its barline halfway down its system) is put in the
      system it falls in, and moved onto the barline under it: the network's grid is four pixels,
      and the columns where a line runs down every staff of the system and stops there
-     (`bar_tracker.lines_down`) are exact; a double or final bar's lines are one barline, and the
+     (`lines_down` below) are exact; a double or final bar's lines are one barline, and the
      bar ends at their middle;
   2. a system's bars run from barline to barline, its first from where its staff lines start, so
      it has the clef and key; staff lines going on past a system's last barline hold the start of
@@ -30,16 +30,66 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
+from scipy import ndimage
 
 from .bar_counter import THRESHOLD, Peak
-from .bar_tracker import GROUP, lines_down
 from .page import SPACE
-from .staff_counter import GREY, Level, look, turn
+from .staff_counter import GREY, INK, Level, look, turn
 
 SNAP = 6  # pixels: how far a peak is moved onto the barline it marks, a cell and a half of the network's grid
 MARGIN_X = 2.0  # spaces either side of a bar
 MARGIN_Y = 1.0  # spaces above its system's top and below its bottom
 TAIL = 3.0  # spaces: staff lines going on this far past a system's last barline hold a bar's start
+COVER = 0.85  # the least share of a staff's height a barline covers, or of a gap it crosses
+ON = 0.5  # spaces past a staff's end line that a line runs on unbroken, to be no barline that stops there
+GROUP = 1.2  # spaces: lines this close are one barline
+
+
+def lines_down(level: Level, dark: float = INK) -> list[np.ndarray]:
+    """For each system, the columns of the turned page where a line darker than `dark` runs down
+    every staff of the system, from its top line to its bottom line, and stops there or carries on
+    to the next staff. A barline passes this surely, where finer tests can turn real ones away."""
+    if not level.systems:
+        return []
+    d = level.space
+    ink = level.dark >= dark
+    h, w = ink.shape
+    # A barline may lean a pixel either way over a staff, on a page not quite level
+    wide = ndimage.maximum_filter1d(ink, 3, axis=1)
+    rows = np.concatenate([np.zeros((1, w), np.int32), np.cumsum(wide, axis=0, dtype=np.int32)])
+    cols = np.arange(w)
+
+    def share(top: np.ndarray, bottom: np.ndarray) -> np.ndarray:
+        """For every column, the share of rows top to bottom (bottom left out) that are ink."""
+        top, bottom = np.clip(top, 0, h), np.clip(bottom, 0, h)
+        return (rows[bottom, cols] - rows[top, cols]) / np.maximum(bottom - top, 1)
+
+    staves = [s for system in level.systems for s in system.staves]
+    staves.sort(key=lambda s: s.top(s.middle))
+    tops = [np.round(np.interp(cols, s.xs, s.tops)).astype(int) for s in staves]
+    bottoms = [np.round(np.interp(cols, s.xs, s.tops) + 4 * s.space).astype(int) for s in staves]
+    on = max(3, int(round(ON * d)))
+    # Each staff, column by column: covered from its top line to its bottom line, and ending at
+    # each of those, or carried on to the staff above or below. A line ends at a staff line if it
+    # does not run on unbroken past it; the line itself, and a barline drawn a pixel long, are the
+    # first row or two
+    covered, ends = {}, {}
+    for k, staff in enumerate(staves):
+        covered[id(staff)] = share(tops[k], bottoms[k] + 1) >= COVER
+        stops_above = share(tops[k] - on, tops[k] - 1) < 1
+        stops_below = share(bottoms[k] + 2, bottoms[k] + on + 1) < 1
+        if k > 0:
+            stops_above |= share(bottoms[k - 1] + 1, tops[k]) >= COVER
+        if k + 1 < len(staves):
+            stops_below |= share(bottoms[k] + 1, tops[k + 1]) >= COVER
+        ends[id(staff)] = stops_above & stops_below
+    found = []
+    for system in level.systems:
+        line = np.ones(w, bool)
+        for staff in system.staves:
+            line &= covered[id(staff)] & ends[id(staff)]
+        found.append(line)
+    return found
 
 
 @dataclass
